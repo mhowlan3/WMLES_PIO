@@ -5,7 +5,7 @@ len = length(u_space);
 x_diff = diff(x);
 
 %vectorize
-if abs(mean(diff(x_diff))) < 1e-20;
+if abs(mean(diff(x_diff))) < 1e-6;
     if tau == true;
         u_time = u_space(end:-1:1)';
         start_t = 0;
