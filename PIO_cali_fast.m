@@ -1,7 +1,11 @@
 function [] = PIO_cali_fast(d, plane_num,retau, DNS_data, save_vals)
 %Calibration file for the Predictive Inner-Outer model of Marusic et al.
 %2011 with DNS data
-
+% d is the filter length scale in delta
+%plane_num assumes multiple plane numbers in xz
+% retau is the identifying Retau number
+%DNS_data as a string
+%save vals specifies to save intermediate calibration values for debugging
 
 %% Unpack the DNS data
 planes_tau_xy = DNS_data.planes_tau_xy;
