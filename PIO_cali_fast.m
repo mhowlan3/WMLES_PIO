@@ -51,87 +51,94 @@ for t = 1 : nt;
     %%%
     for i = 1 : nz;
         %tic
-    %Wall shear stress
-    [series_tau_xy, time_tau_xy, ~] = ...
-        taylorshyp(planes_tau_xy(:,i,t), utau, x, false, U_c(plane_num, t), lambda_x);
-    series_tau_xy = series_tau_xy - mean(series_tau_xy);
-    tplus = time_tau_xy*(utau^2)/nu;
-    fplus_tau(i,t) = 1/mean(diff(tplus));
-    cutt = filter_fun(series_tau_xy', f_filt_tau, fplus_tau(i,t)); %2.65*10^-3
-    
-    tau_wall_filt(:,i,t) = cutt/(utau^2);
-    tau_t_filt(:,i,t) = tplus;
-    tau_wall_unfilt(:,i,t) = series_tau_xy/(utau^2);
-    
-    %Velocity
-    u_space = planes_U(:,i,plane_num,t);
-    [u_series, t_series, ~] = taylorshyp(u_space, utau, x, false, U_c(plane_num,t), lambda_x);
-    u_series = u_series - mean(u_series);
-    %figure
-    tplus = t_series*(utau^2)/nu;
-    fplus_u(i,t) = 1/mean(diff(tplus));
-    cut_u = filter_fun(u_series', f_filt, fplus_u(i,t));
-    u_filt(:,i,t) = cut_u/utau;
-    t_filt(:,i,t) = tplus;
-    
-    %%%% 
-    x_corr = [2, 1]; %x limits in delt for the cross correlation computation
-    % x_corr = 2 seems to give good values for xm and theta
+        %Wall shear stress
+        [series_tau_xy, time_tau_xy, ~] = ...
+            taylorshyp(planes_tau_xy(:,i,t), utau, x, false, U_c(plane_num, t), lambda_x);
+        series_tau_xy = series_tau_xy - mean(series_tau_xy);
+        tplus = time_tau_xy*(utau^2)/nu;
+        fplus_tau(i,t) = 1/mean(diff(tplus));
+        cutt = filter_fun(series_tau_xy', f_filt_tau, fplus_tau(i,t)); %2.65*10^-3
 
-    t_cutoff_vect = find(tau_t_filt(:,i,t) > t_filt(end,i,t));
-     if numel(t_cutoff_vect)==0;
-         t_cut_ind = length(tau_t_filt(:,i,t));
-     else
-        t_cut_ind = t_cutoff_vect(1)-1; %-1
-     end
-     t_corr = tau_t_filt(1:t_cut_ind,i,t);
-     u_corr = interp1(t_filt(:,i,t), u_filt(:,i,t), t_corr);   
-     
-     t_val = x_corr./U_c(plane_num,t);
-     t_val_plus = t_val*(utau^2)/nu;
-     tmp = abs(t_corr-t_val_plus(1));
-     [idx index(1)] = min(tmp);
-     tmp = abs(t_corr-t_val_plus(2));
-     [idx index(2)] = min(tmp);
-     %disp(index(1))  
-     %tic
-%      [cross_corr{i,t},lag{i,t}] = cross_corr_fun(tau_wall_filt(1:t_cut_ind,i,t), u_corr,index(1));
-     [cross_corr{i,t}, lag{i,t}] = xcorr(u_corr, tau_wall_filt(1:t_cut_ind,i,t), 'coeff');
-     ind1 = find(lag{i,t} == -index(1));
-     ind2 = find(lag{i,t} == index(1));
-     cross_corr{i,t} = cross_corr{i,t}(ind1:ind2);
-     lag{i,t} = lag{i,t}(ind1:ind2);
-%      figure
-%      hold on
-%      plot(lag{i,t}, cross_corr{i,t})
-%      plot(lag2{i,t}, cross_corr2{i,t})
-%      [max_val, loc] = max(cross_corr{i,t})
-%      [max_val2, loc2] = max(cross_corr2{i,t})
-     %toc
-     %[cross_corr{s,t},lag{s,t}] = cross_corr_fun(tau_wall_filt(:,s,t), u_filt(:,s,t),index(1));
-    hold on
-    %plot(lag{s,t}, cross_corr{s,t})
-     
-     [m,max_loc] = max(cross_corr{i,t});
-     alpha = m.*(sqrt(mean(tau_wall_filt(1:t_cut_ind,i,t).^2))./sqrt(mean(u_corr.^2)));
-     rms_val = (sqrt(mean(tau_wall_filt(1:t_cut_ind,i,t).^2))./sqrt(mean(u_corr.^2)));
-    x_long = [-x(t_cut_ind:-1:2);x(1:t_cut_ind)];
-    if lag{i,t}(max_loc)==0;
-        lag{i,t}(max_loc)=1;
-    end   
-     tt = t_corr(abs(lag{i,t}(max_loc)));
-     tt = tt*fplus_tau(i,t)/fplus_u(i,t); %convert into the log layer time scale
-     xx = tt*(U_c(plane_num,t)/utau);
-     xm = xx*(nu/utau);
-     %xm = x(abs(lag{s,t}(max_loc)));
-     %xm= x_long(max_loc);
-     theta = atand(ypos(plane_num)/(xm));
-    m_store = [m_store; m];
-    alpha_store = [alpha_store; alpha];
-    xm_store = [xm_store; xm];
-    theta_store = [theta_store; theta];
-    rms_val_store(i) = rms_val;
-    %toc
+        tau_wall_filt(:,i,t) = cutt/(utau^2);
+        tau_t_filt(:,i,t) = tplus;
+        tau_wall_unfilt(:,i,t) = series_tau_xy/(utau^2);
+
+        %Velocity
+        u_space = planes_U(:,i,plane_num,t);
+        [u_series, t_series, ~] = taylorshyp(u_space, utau, x, false, U_c(plane_num,t), lambda_x);
+        u_series = u_series - mean(u_series);
+        %figure
+        tplus = t_series*(utau^2)/nu;
+        fplus_u(i,t) = 1/mean(diff(tplus));
+        %tic
+        cut_u = filter_fun(u_series', f_filt, fplus_u(i,t));
+        %toc
+        u_filt(:,i,t) = cut_u/utau;
+        t_filt(:,i,t) = tplus;
+
+        %%%% 
+        x_corr = [2, 1]; %x limits in delt for the cross correlation computation
+        % x_corr = 2 seems to give good values for xm and theta
+
+        %Uncomment this if different frequencies are used for Taylor's
+        %Hypothesis for tau and u
+%         t_cutoff_vect = find(tau_t_filt(:,i,t) > t_filt(end,i,t));
+%          if numel(t_cutoff_vect)==0;
+              t_cut_ind = length(tau_t_filt(:,i,t));
+%          else
+%             t_cut_ind = t_cutoff_vect(1)-1; %-1
+%          end
+%          t_corr = tau_t_filt(1:t_cut_ind,i,t);
+%          u_corr = interp1(t_filt(:,i,t), u_filt(:,i,t), t_corr); 
+        u_corr = u_filt(:,i,t);
+        t_corr = t_filt(:,i,t);
+
+         t_val = x_corr./U_c(plane_num,t);
+         t_val_plus = t_val*(utau^2)/nu;
+         tmp = abs(t_corr-t_val_plus(1));
+         [idx index(1)] = min(tmp);
+%          tmp = abs(t_corr-t_val_plus(2));
+%          [idx index(2)] = min(tmp);
+         %disp(index(1))  
+         %tic
+    %      [cross_corr{i,t},lag{i,t}] = cross_corr_fun(tau_wall_filt(1:t_cut_ind,i,t), u_corr,index(1));
+         [cross_corr{i,t}, lag{i,t}] = xcorr(u_corr, tau_wall_filt(1:t_cut_ind,i,t), 'coeff');
+         ind1 = find(lag{i,t} == -index(1));
+         ind2 = find(lag{i,t} == index(1));
+         cross_corr{i,t} = cross_corr{i,t}(ind1:ind2);
+         lag{i,t} = lag{i,t}(ind1:ind2);
+    %      figure
+    %      hold on
+    %      plot(lag{i,t}, cross_corr{i,t})
+    %      plot(lag2{i,t}, cross_corr2{i,t})
+    %      [max_val, loc] = max(cross_corr{i,t})
+    %      [max_val2, loc2] = max(cross_corr2{i,t})
+         %toc
+         %[cross_corr{s,t},lag{s,t}] = cross_corr_fun(tau_wall_filt(:,s,t), u_filt(:,s,t),index(1));
+        %hold on
+        %plot(lag{s,t}, cross_corr{s,t})
+
+         [m,max_loc] = max(cross_corr{i,t});
+         alpha = m.*(sqrt(mean(tau_wall_filt(1:t_cut_ind,i,t).^2))./sqrt(mean(u_corr.^2)));
+         rms_val = (sqrt(mean(tau_wall_filt(1:t_cut_ind,i,t).^2))./sqrt(mean(u_corr.^2)));
+        
+         x_long = [-x(t_cut_ind:-1:2);x(1:t_cut_ind)];
+        if lag{i,t}(max_loc)==0;
+            lag{i,t}(max_loc)=1;
+        end   
+         tt = t_corr(abs(lag{i,t}(max_loc)));
+         tt = tt*fplus_tau(i,t)/fplus_u(i,t); %convert into the log layer time scale
+         xx = tt*(U_c(plane_num,t)/utau);
+         xm = xx*(nu/utau);
+         %xm = x(abs(lag{s,t}(max_loc)));
+         %xm= x_long(max_loc);
+         theta = atand(ypos(plane_num)/(xm));
+        m_store = [m_store; m];
+        alpha_store = [alpha_store; alpha];
+        xm_store = [xm_store; xm];
+        theta_store = [theta_store; theta];
+        rms_val_store(i) = rms_val;
+        %toc
     end
     rms_mean_val(t) = mean(rms_val_store);
     clear rms_val_store
