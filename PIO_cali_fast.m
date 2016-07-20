@@ -183,10 +183,14 @@ theta_std = std(theta_store);
 % 
 % %Save data
 if save_vals == true;
+% save(strcat('data/', 'Retau',num2str(retau),'/','plane_',num2str(plane_num),'/',...
+%    num2str(d), 'd/', 'cali_avg_vals.mat'), 'alpha_store', 'theta_store',...
+%    'alpha_mean', 'alpha_std', 'theta_mean', 'theta_std', 'xm_mean', 'theta_avg',...
+%    'xm_store', 'cross_corr_mean', 'cross_corr', 'lag', '-v7.3')
 save(strcat('data/', 'Retau',num2str(retau),'/','plane_',num2str(plane_num),'/',...
-   num2str(d), 'd/', 'cali_avg_vals.mat'), 'alpha_store', 'theta_store',...
-   'alpha_mean', 'alpha_std', 'theta_mean', 'theta_std', 'xm_mean', 'theta_avg',...
-   'xm_store', 'cross_corr_mean', 'cross_corr', 'lag', '-v7.3')
+   num2str(d), 'd/', 'cali_avg_vals.mat'), ...
+   'cross_corr_mean', 'cross_corr', 'lag', '-v7.3')
+quit;
 end
 % disp('Cali done')
 % disp(strcat('plane_',num2str(plane_num),'/', num2str(d), 'd'))
@@ -328,7 +332,7 @@ set(gca, 'fontsize', 20)
 L=legend('$\tau_{w}^{*}$','$\tau_{w}$');
 set(L,'interpreter','latex');
 box on
-title(strcat('$ x/\delta = ', num2str(d), '$'), 'interpreter', 'latex', 'fontsize', 20) 
+title(strcat('$ \lambda_{x}^{+} = ', num2str(d*retau), '$'), 'interpreter', 'latex', 'fontsize', 20) 
 
 %% Save the final results
 disp('Start save')
