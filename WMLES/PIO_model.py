@@ -10,13 +10,17 @@
 ## Import some libraries
 import numpy as np
 from scipy.signal import butter, lfilter, freqz
+import matplotlib as mpl
+mpl.use('Agg')
+#mpl.use('GTK')
+#mport matplotlib.pyplot as plt
 import matplotlib.pyplot as plt
 import sys
 sys.stderr = open('errorlog.txt', 'w')
 
 
 # Input parameters
-d = 3.5
+d = 2.15
 retau = 2000
 plane_num = 1
 folder = ''
@@ -85,8 +89,9 @@ f = open(folder_bin, 'rb')
 data = np.fromfile(f, dtype=np.float64)
 #print(len(data))
 #WMLES dataset size
+# sorry this is currently hardcoded but just take the size from the WMLES file 
 u_size = (11400, 250, 160)
-#u_size = (11400, 2, 2)
+u_size = (11400, 2, 2)
 u_WMLES = np.zeros(u_size, dtype=np.float64)
 for k in range(0, u_size[2]):
 	for j in range(0,u_size[1]):
@@ -132,13 +137,13 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
 def psdx(x, Fs):
 	N = len(x)
 	xdft = np.fft.fft(x)
-	xdft = xdft[1:float(N)/2+1]
+	xdft = xdft[0:float(N)/2+1]
 	psdx = (1/(Fs*N)) * np.square(abs(xdft))
 	psdx[1:len(psdx)-1] = 2*psdx[1:len(psdx)-1]
 	#print(Fs)
 	#print(Fs/N)
 	#print(N)
-	freq = np.arange(0, Fs/2, Fs/N)
+	freq = np.arange(0, Fs/2, Fs/(N+1))
 	return psdx, freq
 
 
@@ -149,12 +154,13 @@ ii=1
 jj=1
 cali_size = tau_w_star.shape
 #print(cali_size)
-#cali_size = [4348, 10, 2]
+#cali_size = [len(tau_w_star[:,0,0]), 3, 2]
 tau_wp = np.zeros(cali_size, dtype=np.float64)
 folder_bin = folder + 'alpha.bin'
 f = open(folder_bin, 'rb')
 alpha = np.fromfile(f, dtype=np.float64)
-psdx_size = [cali_size[0]/2, cali_size[1], cali_size[2]]
+N = len(tau_w_star[:,0,0])
+psdx_size = [float(N)/2.0+1.0, cali_size[1], cali_size[2]]
 tau_wp_psdx = np.zeros(psdx_size, dtype=np.float64)
 tau_wp_f = np.zeros(psdx_size, dtype=np.float64)
 print(alpha[0], alpha[1])
@@ -162,48 +168,71 @@ print(alpha[0], alpha[1])
 for j in range(0, cali_size[1]):
 	for k in range(0, cali_size[2]):
 		tau_wp[:,j,k], Fs = PIO_model_apply(u_WMLES[:,ii,jj], tau_w_star[:,j,k],t_WMLES, t_tau[:, k], d, retau, alpha[k])
+		#print(tau_wp_psdx.shape)
+		#wut1,wut2 = psdx(tau_wp[:,j,k],Fs)
+		#print(wut1.shape)
 		tau_wp_psdx[:,j,k], tau_wp_f[:,j,k] = psdx(tau_wp[:,j,k], Fs)	 
 print(rms(tau_wp[:,0,0]))
 #print(tau_wp.shape)
 print('Model applied and psdx computed')
 
 #Mean PSDX
-print(tau_wp_psdx.shape)
+#print(tau_wp_psdx.shape)
+#print(tau_wp_f[0,0,0])
+
+
 summ = np.zeros(psdx_size[0], dtype=np.float64)
 for j in range(0, psdx_size[1]):
 	for k in range(0, psdx_size[2]):
 		summ = summ + tau_wp_psdx[:,j,k]
 tau_wp_psdx_mean = summ/(float(j*k))
-
+#print(tau_wp_psdx_mean[0])
+#print(tau_wp_psdx_mean[100])
 # Plots
 print('Begin plotting')
-import matplotlib as mpl
-mpl.use('Agg')
-import matplotlib.pyplot as plt
+#from matplotlib import rc
+
+#
 from matplotlib import rc
 #rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 ## for Palatino and other serif fonts use:
 #rc('font',**{'family':'serif','serif':['Palatino']})
 #rc('text', usetex=True)
-# PSDX spectra of shear stress flucctuations
-fig1 = plt.figure()
+#mpl.rcParams['text.usetex'] = True
+#mpl.rcParams['text.latex.unicode'] = True
+#
+
+
 #plt.rc('text', usetex=True)
 #plt.rc('font', family='serif')
-ax = fig1.add_subplot(111)
+fig1 = plt.gca()
 psdx_plot = np.zeros(tau_wp_psdx_mean.shape, dtype=np.float64)
 for i in range(0, len(tau_wp_psdx_mean)):
 	psdx_plot[i] = (tau_wp_f[i,0,0] * tau_wp_psdx_mean[i])/1.035**2
-plt.plot(2*np.pi*tau_wp_f[:,0,0], psdx_plot, 'b-')
-ax.set_yscale('log')
-ax.set_xscale('log')
+# Plot the DNS spectra
+f = open('DNS_tau_spectra.bin', 'rb')
+DNS_tau_spectra = np.fromfile(f, dtype=np.float64)
+DNS_f = DNS_tau_spectra[0:22]
+DNS_psdx = DNS_tau_spectra[22:44]
+#print(psdx_plot.shape)
+#print(tau_wp_f[0,0,0])
+#print(tau_wp_f[100,0,0])
+#print(psdx_plot[100])
+fig1.plot(2*np.pi*tau_wp_f[:,0,0], psdx_plot, 'b-', DNS_f, DNS_psdx, 'k-')
+
+fig1.set_yscale('log')
+fig1.set_xscale('log')
 plt.ylim([10**-4, 10**0])
 plt.xlim([10**-3, 2**1])
-#plt.xlabel(r"$w^{+}$", fontsize=16)
-#plt.ylabel(r"$w^{+} E(w^{+})/ \tau_{w}^{+2}$",fontsize=16)
-plt.savefig('test_fig_2.eps', format='eps', dpi=1000)
+plt.xlabel(r"$w^{+}$", fontsize=16)
+plt.ylabel(r"$w^{+} E(w^{+})/ \tau_{w}^{+2}$",fontsize=16)
+plt.legend([r"$\tau_{wp, WMLES}^{\prime +}$", r"$\tau_{DNS}^{\prime +}$"], 'upper left')
+title_str = r'$ \lambda_{x}^{+}=' + str(retau*d) + '$'
+plt.title(title_str)
+plt_name = folder + 'spectra_fig.eps'
+plt.savefig(plt_name, format='eps', dpi=1000)
 print('Plots saved')
-
-
+#plt.show()
 
 # Output
 sys.stderr.close()
